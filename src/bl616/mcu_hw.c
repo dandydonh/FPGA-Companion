@@ -3,6 +3,7 @@
 */
 
 #include <FreeRTOS.h>
+#include <time.h>
 #include "mm.h"
 #include "semphr.h"
 #include "async_event.h"
@@ -23,6 +24,7 @@
 #include "../sdc.h"
 #include "../sysctrl.h"
 #include "../debug.h"
+#include "../companion_status.h"
 #include "../mcu_hw.h"
 #include "../inifile.h"
 #include "../menu.h"
@@ -729,6 +731,8 @@ static void usbh_hid_client_thread(void *argument) {
   }
 
   usb_debugf("HID client #%d: entering hid thread loop", hid->index);
+  if(hid->report.type==REPORT_TYPE_KEYBOARD)
+    companion_status_keyboard(hid->index,true);
 
   while (1) {
     if (hid->stop)
@@ -792,6 +796,7 @@ static void usbh_hid_client_thread(void *argument) {
   }
 
   usb_debugf("HID client #%d: stopping", hid->index);
+  companion_status_keyboard(hid->index,false);
   if (hid->hid_state.joystick.js_index != NO_JOYSTICK) {
     hid_release_joystick(hid->hid_state.joystick.js_index);
     hid->hid_state.joystick.js_index = NO_JOYSTICK;
@@ -1102,6 +1107,7 @@ void usbh_hid_run(struct usbh_hid *hid_class)
 void usbh_hid_stop(struct usbh_hid *hid_class)
 {
   uint8_t i = hid_class->minor;
+  companion_status_keyboard(i,false);
   usb_config.hid_info[i].stop = 1;
 
   if (usb_config.hid_info[i].hid_state.joystick.js_index != NO_JOYSTICK)
@@ -1167,6 +1173,7 @@ void usb_host(void) {
   usb_dev = bflb_device_get_by_name(BFLB_NAME_USB_V2);
   if (!usb_dev) {
       usb_debugf("usb device not found");
+      companion_status_controller_result(-1);
       return;
   }
 
@@ -1191,6 +1198,24 @@ void usb_host(void) {
 
   usbh_initialize(0, usb_dev->reg_base, NULL);
 }
+
+#ifdef CONFIG_COMPANION_STATUS
+/* USBH_EVENT_INIT precedes hardware init in reviewed CherryUSB, and
+ * usbh_initialize may merely start a thread. Wrap the actual HCD result.
+ * Verify these signatures and linker-wrap interception in the pinned SDK
+ * before building; this private derivative has not yet been compiled. */
+extern int __real_usb_hc_init(struct usbh_bus *bus);
+extern int __real_usb_hc_deinit(struct usbh_bus *bus);
+int __wrap_usb_hc_init(struct usbh_bus *bus) {
+  int result=__real_usb_hc_init(bus);
+  if(bus->busid==0)companion_status_controller_result(result);
+  return result;
+}
+int __wrap_usb_hc_deinit(struct usbh_bus *bus) {
+  if(bus->busid==0)companion_status_stopping();
+  return __real_usb_hc_deinit(bus);
+}
+#endif
 
 uint8_t usbh_get_hport_active_config_index(struct usbh_hubport *hport)
 {
@@ -1335,6 +1360,20 @@ void mcu_hw_spi_end(void) {
   bflb_gpio_set(gpio, SPI_PIN_CSN);
   xSemaphoreGive(spi_sem);
 }
+
+#ifdef CONFIG_COMPANION_STATUS
+bool mcu_hw_status_send(const uint8_t *frame,unsigned length) {
+  if(!spi_sem||xSemaphoreTake(spi_sem,0)!=pdTRUE)return false;
+  bflb_gpio_set(gpio,SPI_PIN_CSN);
+  bflb_mtimer_delay_us(1);
+  bflb_gpio_reset(gpio,SPI_PIN_CSN);
+  for(unsigned i=0;i<length;i++)(void)mcu_hw_spi_tx_u08(frame[i]);
+  bflb_gpio_set(gpio,SPI_PIN_CSN);
+  bflb_mtimer_delay_us(1);
+  xSemaphoreGive(spi_sem);
+  return true;
+}
+#endif
 
 void mcu_hw_irq_ack(void) {
   // re-enable the interrupt since it was now serviced outside the irq handeler
@@ -1628,6 +1667,7 @@ void mcu_hw_init(void) {
   bflb_gpio_reset(gpio, PIN_JTAGSEL);
 #endif
   mcu_hw_spi_init();
+  companion_status_start();
 
 #ifndef CONFIG_CONSOLE_WO
   uart0 = bflb_device_get_by_name("uart0");

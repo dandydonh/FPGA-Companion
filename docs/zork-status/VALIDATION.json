@@ -1,0 +1,43 @@
+{
+  "package": "zork-status-v1-exp1",
+  "status": "experimental local build; no hardware validation; not upstream approved",
+  "board": "Tang Nano 20K revision 3923",
+  "chip": "BL616",
+  "companion_base_url": "https://github.com/MiSTle-Dev/FPGA-Companion",
+  "companion_base_commit": "cc741e8a48a511c102a7b9660706999d261991d2",
+  "dependencies": {
+    "sdk": {
+      "url": "https://github.com/bouffalolab/bouffalo_sdk",
+      "commit": "eba87edced5a03ce8bcad8cf6002494982f83a5f"
+    },
+    "u8g2": {
+      "url": "https://github.com/olikraus/u8g2",
+      "commit": "dc9fc73ddfc4fc8690afea370780ba322bd0cd79",
+      "materialized_paths": [
+        "csrc",
+        "sys/bitmap/common",
+        "LICENSE"
+      ],
+      "file_count": 128
+    }
+  },
+  "compiler": "riscv64-unknown-elf-gcc 14.3.0; Picolibc 1.8.10",
+  "build_command": "make -C src/bl616 TANG_BOARD=nano20k_v3923 COMPANION_STATUS_ANNOUNCE=ON BUILD_DIR=build-status",
+  "binary_bytes": 750208,
+  "binary_sha256": "3bcd784eed0b07e95dd21b905182344a7c7734749800f04ebfc20aeb7ee980fd",
+  "flash_address": "0x40000",
+  "payload_end_exclusive": "0xf7280",
+  "erase_end_exclusive_4KiB": "0xf8000",
+  "validation": {
+    "elf_sha256": "af17a8b37eba29f1b3d62c26882bae504cd355b430240bd96764e74c104515fe",
+    "final_link_wrap_options": true,
+    "hub_object_external_hcd_relocations": true,
+    "elf_hub_calls_wrappers": true,
+    "wrappers_call_real_hcd_and_status_updates": true,
+    "tls_program_header": true,
+    "boot_tls_symbols": true,
+    "runtime_validation": false,
+    "fpga_automatic_selection_validation": false
+  },
+  "source_note": "Application source, exact source manifest and patch included. SDK/toolchain are separately pinned dependencies; retained locally. This is not a warning-free build. No runtime or FPGA validation performed."
+}

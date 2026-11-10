@@ -40,15 +40,27 @@
  * See http://www.freertos.org/a00110.html.
  *----------------------------------------------------------*/
 #if defined(BL602) || defined(BL702) || defined(BL702L)
+#ifndef configMTIME_BASE_ADDRESS
 #define configMTIME_BASE_ADDRESS    (0x02000000UL + 0xBFF8UL)
+#endif
+#ifndef configMTIMECMP_BASE_ADDRESS
 #define configMTIMECMP_BASE_ADDRESS (0x02000000UL + 0x4000UL)
+#endif
 #else
 #if __riscv_xlen == 64
+#ifndef configMTIME_BASE_ADDRESS
 #define configMTIME_BASE_ADDRESS    (0)
+#endif
+#ifndef configMTIMECMP_BASE_ADDRESS
 #define configMTIMECMP_BASE_ADDRESS ((0xE4000000UL) + 0x4000UL)
+#endif
 #else
+#ifndef configMTIME_BASE_ADDRESS
 #define configMTIME_BASE_ADDRESS    ((0xE0000000UL) + 0xBFF8UL)
+#endif
+#ifndef configMTIMECMP_BASE_ADDRESS
 #define configMTIMECMP_BASE_ADDRESS ((0xE0000000UL) + 0x4000UL)
+#endif
 #endif
 #endif
 #define configSUPPORT_STATIC_ALLOCATION         1
