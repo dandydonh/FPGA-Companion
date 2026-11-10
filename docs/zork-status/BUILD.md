@@ -5,6 +5,13 @@ This branch is based on FPGA-Companion v1.4.33 commit
 readiness reporter for Tang Nano 20K revision3923. It is not upstream approved.
 No pull request has been submitted and protocol allocation remains provisional.
 
+## Problem and purpose
+
+Read [why this change is needed](PURPOSE.md) for the existing startup limitation,
+the intended serial/USB selection behavior, and what this patch does and does
+not resolve. It adds a missing readiness signal; it is not a demonstrated fix
+for the separate intermittent startup failures.
+
 ## Build locally
 
 Use a persistent installation of Bouffalo GCC14.3.0/Picolibc1.8.10 and the official
