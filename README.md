@@ -1,5 +1,28 @@
 # MiSTle FPGA Companion
 
+## About this fork: automatic serial / USB keyboard startup
+
+This fork adds optional **BL616 readiness announcements** for the Zork FPGA
+project on Tang Nano 20K revision 3923. Zork currently defaults to USB keyboard
+input and requires a button override for serial. Stock Companion lacks an
+explicit readiness report that lets the FPGA automatically choose between them.
+
+The patch sends periodic USB host status reports so matching FPGA logic can
+select USB when the controller is ready, or fall back to serial after a bounded
+silent interval when there is no conflicting Companion activity. This fork keeps
+the firmware changes separate from Zork while validation and an upstream proposal
+are prepared.
+
+**Experimental:** the firmware compiles and controller-call interception has
+been checked in the linked code, but it has not been tested on hardware. The
+matching FPGA changes still need build and validation. The protocol is provisional;
+no upstream pull request has been submitted.
+
+Read the [purpose and limitations](docs/zork-status/PURPOSE.md),
+[build instructions and validation status](docs/zork-status/BUILD.md),
+[BL616 installation guide](docs/zork-status/INSTALL.md), and
+[protocol draft](docs/zork-status/PROTOCOL.md).
+
 The MiSTle FPGA Companion implements support functions for FPGA-based retro
 computing projects like the [MiSTeryNano
 project](https://github.com/MiSTle-Dev/MiSTeryNano). While the FPGA typically
